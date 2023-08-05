@@ -14,31 +14,24 @@ import kotlin.math.*
  * already without WAV header.
  */
 class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, attrs) {
-
-    companion object {
-        const val LEFT_RIGHT_PADDING = 50.0f
-        const val TOP_BOTTOM_PADDING = 50.0f
-        private val MAX_VALUE = 2.0f.pow(16.0f) - 1 // max 16-bit value
-        val INV_MAX_VALUE = 1.0f / MAX_VALUE // multiply with this to get % of max value
-
-        /** Transform raw audio into drawable array of integers */
-        fun transformRawData(buffer: ByteBuffer): IntArray {
-            val nSamples = buffer.limit() / 2 // assuming 16-bit PCM mono
-            val waveForm = IntArray(nSamples)
-            for (i in 1 until buffer.limit() step 2) {
-                waveForm[i / 2] = (buffer[i].toInt() shl 8) or buffer[i - 1].toInt()
-            }
-            return waveForm
-        }
-    }
-
     private val linePaint = Paint()
+    private val progressPaint = Paint()
     private lateinit var waveForm: IntArray
     private lateinit var waveFormBatched: List<List<Int>>
 
+    var progress = 0.0
+    set(value) {
+        field = if (value > 100.0) 100.0
+                else if (value < 0.0) 0.0
+                else value
+        invalidate()
+    }
+
     init {
-        linePaint.color = Color.rgb(0, 0, 255)
+        linePaint.color = Color.rgb(200, 200, 200)
+        progressPaint.color = Color.rgb(255, 255, 255)
         linePaint.strokeWidth = 2f
+        progressPaint.strokeWidth = 3f
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -61,8 +54,9 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
                 height / 2.0f - TOP_BOTTOM_PADDING // max amount of px from middle to the edge minus pad
             val amplitudeScaleFactor =
                 INV_MAX_VALUE * maxAmplitude // multiply by this to get number of px from middle
+            val progressX = LEFT_RIGHT_PADDING + (progress * (width - LEFT_RIGHT_PADDING * 2) / 100)
 
-            var prevX = 0f
+                var prevX = 0f
             var prevLastY = 0f
 
             waveFormBatched.forEachIndexed { i, batch ->
@@ -80,12 +74,13 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
                         if (batch.lastIndexOf(minSample) > batch.lastIndexOf(maxSample)) minY
                         else maxY
 
+                    val paint = if (x <= progressX) progressPaint else linePaint
                     // drawing vertical line between the minimum and maximum amplitudes in the same pixels column.
-                    canvas?.drawLine(x, minY, x, maxY, linePaint)
+                    canvas?.drawLine(x, minY, x, maxY, paint)
 
                     // drawing a line between the last sample in the previous column and the first sample in the current column.
                     if (i > 0){
-                        canvas?.drawLine(prevX, prevLastY, x, firstY, linePaint)
+                        canvas?.drawLine(prevX, prevLastY, x, firstY, paint)
                     }
 
                     prevX = x
@@ -116,5 +111,22 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
     fun setData(buffer: ByteBuffer) {
         waveForm = transformRawData(buffer)
         invalidate()
+    }
+
+    companion object {
+        const val LEFT_RIGHT_PADDING = 50.0f
+        const val TOP_BOTTOM_PADDING = 50.0f
+        private val MAX_VALUE = 2.0f.pow(16.0f) - 1 // max 16-bit value
+        val INV_MAX_VALUE = 1.0f / MAX_VALUE // multiply with this to get % of max value
+
+        /** Transform raw audio into drawable array of integers */
+        fun transformRawData(buffer: ByteBuffer): IntArray {
+            val nSamples = buffer.limit() / 2 // assuming 16-bit PCM mono
+            val waveForm = IntArray(nSamples)
+            for (i in 1 until buffer.limit() step 2) {
+                waveForm[i / 2] = (buffer[i].toInt() shl 8) or buffer[i - 1].toInt()
+            }
+            return waveForm
+        }
     }
 }

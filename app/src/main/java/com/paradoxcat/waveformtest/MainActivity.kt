@@ -4,11 +4,19 @@ import android.content.res.AssetFileDescriptor
 import android.media.AudioFormat
 import android.media.MediaExtractor
 import android.media.MediaFormat
-import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import com.paradoxcat.waveformtest.extention.registerPlaybackPercentageCallback
 import com.paradoxcat.waveformtest.waveviewer.databinding.ActivityMainBinding
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import java.io.IOException
 import java.nio.ByteBuffer
 
@@ -30,7 +38,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var _binding: ActivityMainBinding
-    private lateinit var mediaPlayer: MediaPlayer
+    private val exoPlayer by lazy { ExoPlayer.Builder(this).build() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,17 +48,34 @@ class MainActivity : AppCompatActivity() {
         try {
             val assetFileDescriptor = assets.openFd(EXAMPLE_AUDIO_FILE_NAME)
 
-            // initialize media player
-            mediaPlayer = MediaPlayer()
-            mediaPlayer.setDataSource(assetFileDescriptor)
-            mediaPlayer.prepareAsync()
+            val firstVideoUri = Uri.parse("asset:///$EXAMPLE_AUDIO_FILE_NAME")
+            val firstItem = MediaItem.fromUri(firstVideoUri)
+            exoPlayer.addMediaItem(firstItem)
+            exoPlayer.prepare()
             _binding.playButton.setOnClickListener {
                 try {
-                    if (mediaPlayer.isPlaying) mediaPlayer.pause() else mediaPlayer.start()
+                    if (exoPlayer.isPlaying) exoPlayer.pause() else exoPlayer.play()
                 } catch (e: IllegalStateException) {
                     Log.e(TAG, "Could not start playing", e)
                 }
             }
+            exoPlayer.registerPlaybackPercentageCallback(100)
+                .onEach { percentage ->
+                    _binding.waveformView.progress = percentage
+                }.catch { e->
+                    e.printStackTrace()
+                }
+                .launchIn(lifecycleScope)
+
+            exoPlayer.addListener(object : Player.Listener{
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    super.onPlaybackStateChanged(playbackState)
+                    if (playbackState == Player.STATE_ENDED){
+                        exoPlayer.seekTo(0)
+                        exoPlayer.playWhenReady = false
+                    }
+                }
+            })
 
             // allocate a buffer
             var fileSize = assetFileDescriptor.length // in bytes
