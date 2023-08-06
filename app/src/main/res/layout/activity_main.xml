@@ -7,8 +7,7 @@
     <com.paradoxcat.waveformtest.view.WaveformSlideBar
         android:id="@+id/waveformView"
         android:layout_width="match_parent"
-        android:layout_height="500dp"
-        app:layout_constraintBottom_toTopOf="@id/controlsContainer"
+        android:layout_height="300dp"
         app:layout_constraintTop_toTopOf="parent" />
 
 
