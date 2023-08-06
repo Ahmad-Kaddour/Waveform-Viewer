@@ -249,6 +249,7 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
      * because there may not be enough horizontal pixels to cover all the samples.
      */
     private fun splitWaveForm() {
+        if (width == 0) return
         val pixelsCount = (width - horizontalPadding * 2)  // available amount of pixels in a raw
         val samplesPerPixel = waveForm.size / pixelsCount  // to determine how many samples will have the same X value.
         val batchSize = max(1, ceil(samplesPerPixel).toInt()) // to handle the case if samples are less than the pixels.
@@ -300,6 +301,8 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
      */
     fun setData(buffer: ByteBuffer) {
         waveForm = transformRawData(buffer)
+        timeFrames = emptyList()
+        splitWaveForm()
         invalidate()
     }
 
