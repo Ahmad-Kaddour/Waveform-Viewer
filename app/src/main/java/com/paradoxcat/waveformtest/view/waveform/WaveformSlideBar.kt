@@ -5,11 +5,14 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import java.nio.ByteBuffer
 import kotlin.math.*
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 /**
  * All functionality assumes that provided data has only 1 channel, 44100 Hz sample rate, 16-bits per sample, and is
@@ -19,9 +22,12 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
     private val linePaint = Paint()
     private val progressPaint = Paint()
     private val progressIndicatorPaint = Paint()
+    private val timeBarPaint = Paint()
+    private val textRect = Rect()
 
     private lateinit var waveForm: IntArray
     private lateinit var waveFormBatched: List<WaveFormBatchData>
+    private lateinit var timeFrames: List<Long>
 
     var progressChangeListener: ProgressChangeListener? = null
 
@@ -46,11 +52,14 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
 
     init {
         linePaint.color = Color.rgb(200, 200, 200)
-        progressPaint.color = Color.rgb(255, 255, 255)
-        progressIndicatorPaint.color = Color.rgb(255, 0, 0)
         linePaint.strokeWidth = 2f
+        progressPaint.color = Color.rgb(255, 255, 255)
         progressPaint.strokeWidth = 2f
+        progressIndicatorPaint.color = Color.rgb(255, 0, 0)
         progressIndicatorPaint.strokeWidth = 4f
+        timeBarPaint.color = Color.rgb(255, 255, 255)
+        timeBarPaint.strokeWidth = 2f
+        timeBarPaint.textSize = 20f
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -68,6 +77,11 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
             }
 
             drawWaveForm(canvas)
+
+            if (::timeFrames.isInitialized) {
+                drawTimeBar(canvas)
+            }
+
             drawProgressIndicator(canvas)
         }
     }
@@ -114,6 +128,35 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
         canvas.drawCircle(progressX, progressY, INDICATOR_CIRCLE_RADIOS , progressIndicatorPaint)
     }
 
+    private fun drawTimeBar(canvas: Canvas){
+        // distance in pixels between time frames.
+        val framesDistance =
+            if (timeFrames.size <= 1) 0f
+            else (width - LEFT_RIGHT_PADDING * 2) / (timeFrames.size - 1)
+
+        timeBarPaint.strokeWidth = 1f
+        timeFrames.forEachIndexed{ i, time ->
+            // drawing time frame anchor
+            val x = LEFT_RIGHT_PADDING + framesDistance * i
+            canvas.drawLine(x, 0f, x, 20f, timeBarPaint)
+
+            // drawing the time frame text
+            val duration = time.toDuration(DurationUnit.MILLISECONDS)
+            val timeString =
+                duration.toComponents { minutes, seconds, _ ->
+                    String.format("%02d:%02d", minutes, seconds) // formatting time frame text in mm:ss format
+                }
+
+            timeBarPaint.getTextBounds(timeString, 0, timeString.length, textRect)
+            val textX = x - textRect.width() / 2.toFloat() // centering the text by the anchor.
+            canvas.drawText(timeString, textX, 50f, timeBarPaint)
+        }
+
+        // drawing the time frames bar horizontal line
+        timeBarPaint.strokeWidth = 2f
+        canvas.drawLine(0f, 0f, width.toFloat(), 0f, timeBarPaint)
+    }
+
 
     private var indicatorTouchX = 0f
 
@@ -132,7 +175,7 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
                 indicatorTouchX = event.x
                 // Preventing indicator from going out of the view bounds
                 indicatorTouchX = max(LEFT_RIGHT_PADDING, indicatorTouchX)
-                indicatorTouchX = min(LEFT_RIGHT_PADDING + (width - LEFT_RIGHT_PADDING * 2), indicatorTouchX)
+                indicatorTouchX = min(width - LEFT_RIGHT_PADDING, indicatorTouchX)
                 // Invalidate the view to redraw the line
                 invalidate()
                 return true
@@ -206,6 +249,15 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
         invalidate()
     }
 
+    /**
+     * Set the duration of the audio, to draw the time frames bar.
+     * @param duration -- The duration of the audio in milliseconds..
+     */
+    fun setDuration(duration: Long){
+        timeFrames = convertDurationToTimeFrames(duration, 5)
+        invalidate()
+    }
+
     companion object {
         const val LEFT_RIGHT_PADDING = 50.0f
         const val TOP_BOTTOM_PADDING = 50.0f
@@ -221,6 +273,37 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
                 waveForm[i / 2] = (buffer[i].toInt() shl 8) or buffer[i - 1].toInt()
             }
             return waveForm
+        }
+
+        /** Converting the duration of the audio into time frames, with minimum interval of 1 second.
+         * @param duration -- Duration of the audio in milliseconds.
+         * @param count -- The count of the time frames to be split into.
+         *                 If the duration is not enough to create time windows of the specified count,
+         *                 the returned list will contain less elements than count.
+         * @return List contains the time frames in milliseconds.
+         * @throws IllegalArgumentException if the duration is negative, or the count is less than 2.
+         **/
+        fun convertDurationToTimeFrames(duration: Long, count: Int): List<Long> {
+            if (duration < 0) {
+                throw IllegalArgumentException("duration must be positive")
+            }
+            if (count < 1) {
+                throw IllegalArgumentException("count must be at least 2")
+            }
+            val frames = mutableListOf<Long>()
+            val step = duration / (count - 1).toDouble()
+            var currentTime = step
+
+            frames.add(0)
+            while (currentTime < duration && step >= 1000){
+                frames.add(floor(currentTime).toLong())
+                currentTime += step
+            }
+            if (duration >= 1000) {
+                frames.add(duration)
+            }
+
+            return frames
         }
     }
 }

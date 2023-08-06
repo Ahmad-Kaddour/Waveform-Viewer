@@ -74,6 +74,8 @@ class MainActivity : AppCompatActivity() {
                     if (playbackState == Player.STATE_ENDED){
                         exoPlayer.seekTo(0)
                         exoPlayer.playWhenReady = false
+                    }else if (playbackState == Player.STATE_READY){
+                        _binding.waveformView.setDuration(exoPlayer.duration)
                     }
                 }
             })
