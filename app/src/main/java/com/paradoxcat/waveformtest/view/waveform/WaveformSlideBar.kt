@@ -9,22 +9,18 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import com.paradoxcat.waveformtest.waveviewer.R
 import java.nio.ByteBuffer
 import kotlin.math.*
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+
 
 /**
  * All functionality assumes that provided data has only 1 channel, 44100 Hz sample rate, 16-bits per sample, and is
  * already without WAV header.
  */
 class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, attrs) {
-    private val linePaint = Paint()
-    private val progressPaint = Paint()
-    private val progressIndicatorPaint = Paint()
-    private val timeBarPaint = Paint()
-    private val textRect = Rect()
-
     private lateinit var waveForm: IntArray
     private lateinit var waveFormBatched: List<WaveFormBatchData>
     private lateinit var timeFrames: List<Long>
@@ -43,23 +39,53 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
     private val progressX: Float
     get() {
         return if (indicatorTouchX != 0f) indicatorTouchX
-        else LEFT_RIGHT_PADDING + (progress * (width - LEFT_RIGHT_PADDING * 2) / 100).toFloat()
+        else horizontalPadding + (progress * (width - horizontalPadding * 2) / 100).toFloat()
     }
 
     // Calculating Y coordinate for the progress indicator.
     private val progressY: Float
-    get() = height.toFloat() - INDICATOR_CIRCLE_RADIOS
+    get() = height.toFloat() - indicatorHandleRadius
+
+    // Drawing attributes
+    private var showProgress: Boolean = false
+    private var horizontalPadding: Float = 50f
+    private var verticalPadding: Float = 50f
+    private var indicatorHandleRadius: Float = 20f
+
+    private val waveformPaint = Paint()
+    private val waveformProgressPaint = Paint()
+    private val progressIndicatorPaint = Paint()
+    private val timeBarPaint = Paint()
+    private val textRect = Rect()
 
     init {
-        linePaint.color = Color.rgb(200, 200, 200)
-        linePaint.strokeWidth = 2f
-        progressPaint.color = Color.rgb(255, 255, 255)
-        progressPaint.strokeWidth = 2f
-        progressIndicatorPaint.color = Color.rgb(255, 0, 0)
-        progressIndicatorPaint.strokeWidth = 4f
-        timeBarPaint.color = Color.rgb(255, 255, 255)
+        initDrawingParameters(attrs)
+    }
+
+    private fun initDrawingParameters(attrs: AttributeSet){
+        val typedArray = context.obtainStyledAttributes(attrs, R.styleable.WaveformSlideBar)
+        val indicatorLineWidth = typedArray.getFloat(R.styleable.WaveformSlideBar_indicatorLineWidth, 4f)
+        val indicatorColor = typedArray.getColor(R.styleable.WaveformSlideBar_indicatorColor, Color.RED)
+        val waveformColor = typedArray.getColor(R.styleable.WaveformSlideBar_waveformColor, Color.DKGRAY)
+        val waveformProgressColor = typedArray.getColor(R.styleable.WaveformSlideBar_waveformProgressColor, Color.GRAY)
+        val timeBarColor = typedArray.getColor(R.styleable.WaveformSlideBar_timeBarColor, Color.GRAY)
+
+        waveformPaint.color = waveformColor
+        waveformPaint.strokeWidth = 2f
+        waveformProgressPaint.color = waveformProgressColor
+        waveformProgressPaint.strokeWidth = 2f
+        progressIndicatorPaint.color = indicatorColor
+        progressIndicatorPaint.strokeWidth = indicatorLineWidth
+        timeBarPaint.color = timeBarColor
         timeBarPaint.strokeWidth = 2f
         timeBarPaint.textSize = 20f
+
+        showProgress = typedArray.getBoolean(R.styleable.WaveformSlideBar_showProgress, false)
+        horizontalPadding = typedArray.getFloat(R.styleable.WaveformSlideBar_waveformHorizontalPadding, 50f)
+        verticalPadding = typedArray.getFloat(R.styleable.WaveformSlideBar_waveformVerticalPadding, 50f)
+        indicatorHandleRadius = typedArray.getFloat(R.styleable.WaveformSlideBar_indicatorHandleRadius, 20f)
+
+        typedArray.recycle()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -82,15 +108,17 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
                 drawTimeBar(canvas)
             }
 
-            drawProgressIndicator(canvas)
+            if (showProgress) {
+                drawProgressIndicator(canvas)
+            }
         }
     }
 
     private fun drawWaveForm(canvas: Canvas){
         val sampleDistance =
-            (width - LEFT_RIGHT_PADDING * 2) / (waveForm.size - 1) // distance between centers of 2 samples
+            (width - horizontalPadding * 2) / (waveForm.size - 1) // distance between centers of 2 samples
         val maxAmplitude =
-            height / 2.0f - TOP_BOTTOM_PADDING // max amount of px from middle to the edge minus pad
+            height / 2.0f - verticalPadding // max amount of px from middle to the edge minus pad
         val amplitudeScaleFactor =
             INV_MAX_VALUE * maxAmplitude // multiply by this to get number of px from middle
 
@@ -99,7 +127,7 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
 
         waveFormBatched.forEachIndexed { i, batchData ->
 
-            val x = LEFT_RIGHT_PADDING + i * max(1f, sampleDistance) // minimum distance between centers should be 1 pixel.
+            val x = horizontalPadding + i * max(1f, sampleDistance) // minimum distance between centers should be 1 pixel.
             val minY = height / 2.0f - batchData.minAmplitude * amplitudeScaleFactor
             val maxY = height / 2.0f - batchData.maxAmplitude * amplitudeScaleFactor
             val firstY =
@@ -109,7 +137,7 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
                 if (batchData.minLastIndex > batchData.maxLastIndex) minY
                 else maxY
 
-            val paint = if (x <= progressX) progressPaint else linePaint
+            val paint = if (x <= progressX && showProgress) waveformProgressPaint else waveformPaint
             // drawing vertical line between the minimum and maximum amplitudes in the same pixels column.
             canvas.drawLine(x, minY, x, maxY, paint)
 
@@ -125,19 +153,19 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
 
     private fun drawProgressIndicator(canvas: Canvas){
         canvas.drawLine(progressX, 0f, progressX, progressY, progressIndicatorPaint)
-        canvas.drawCircle(progressX, progressY, INDICATOR_CIRCLE_RADIOS , progressIndicatorPaint)
+        canvas.drawCircle(progressX, progressY, indicatorHandleRadius , progressIndicatorPaint)
     }
 
     private fun drawTimeBar(canvas: Canvas){
         // distance in pixels between time frames.
         val framesDistance =
             if (timeFrames.size <= 1) 0f
-            else (width - LEFT_RIGHT_PADDING * 2) / (timeFrames.size - 1)
+            else (width - horizontalPadding * 2) / (timeFrames.size - 1)
 
         timeBarPaint.strokeWidth = 1f
         timeFrames.forEachIndexed{ i, time ->
             // drawing time frame anchor
-            val x = LEFT_RIGHT_PADDING + framesDistance * i
+            val x = horizontalPadding + framesDistance * i
             canvas.drawLine(x, 0f, x, 20f, timeBarPaint)
 
             // drawing the time frame text
@@ -174,8 +202,8 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
                 // Update the last touch position
                 indicatorTouchX = event.x
                 // Preventing indicator from going out of the view bounds
-                indicatorTouchX = max(LEFT_RIGHT_PADDING, indicatorTouchX)
-                indicatorTouchX = min(width - LEFT_RIGHT_PADDING, indicatorTouchX)
+                indicatorTouchX = max(horizontalPadding, indicatorTouchX)
+                indicatorTouchX = min(width - horizontalPadding, indicatorTouchX)
                 // Invalidate the view to redraw the line
                 invalidate()
                 return true
@@ -202,8 +230,8 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
         val centerY = progressY
         val dx = (touchX - centerX).pow(2)
         val dy = (touchY - centerY).pow(2)
-        val isInsideTheHandle = dx + dy < INDICATOR_CIRCLE_RADIOS.pow(2)
-        val isOnTheLine = touchX <= centerX + INDICATOR_CIRCLE_RADIOS && touchX >= centerX - INDICATOR_CIRCLE_RADIOS
+        val isInsideTheHandle = dx + dy < indicatorHandleRadius.pow(2)
+        val isOnTheLine = touchX <= centerX + indicatorHandleRadius && touchX >= centerX - indicatorHandleRadius
         return isInsideTheHandle || isOnTheLine
     }
 
@@ -211,7 +239,7 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
      * Updating the current progress value and notifying observers with the new value.
      */
     private fun updateIndicatorProgress(){
-        progress = ((indicatorTouchX - LEFT_RIGHT_PADDING) / (width - LEFT_RIGHT_PADDING * 2) * 100).toDouble()
+        progress = ((indicatorTouchX - horizontalPadding) / (width - horizontalPadding * 2) * 100).toDouble()
         progressChangeListener?.onProgressChanged(progress)
     }
 
@@ -221,7 +249,7 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
      * because there may not be enough horizontal pixels to cover all the samples.
      */
     private fun splitWaveForm() {
-        val pixelsCount = (width - LEFT_RIGHT_PADDING * 2)  // available amount of pixels in a raw
+        val pixelsCount = (width - horizontalPadding * 2)  // available amount of pixels in a raw
         val samplesPerPixel = waveForm.size / pixelsCount  // to determine how many samples will have the same X value.
         val batchSize = max(1, ceil(samplesPerPixel).toInt()) // to handle the case if samples are less than the pixels.
         val batches = mutableListOf<WaveFormBatchData>()
@@ -285,9 +313,6 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
     }
 
     companion object {
-        const val LEFT_RIGHT_PADDING = 50.0f
-        const val TOP_BOTTOM_PADDING = 50.0f
-        const val INDICATOR_CIRCLE_RADIOS = 20.0f
         private val MAX_VALUE = 2.0f.pow(16.0f) - 1 // max 16-bit value
         val INV_MAX_VALUE = 1.0f / MAX_VALUE // multiply with this to get % of max value
 

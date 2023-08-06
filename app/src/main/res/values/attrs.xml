@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WaveformSlideBar">
+        <attr name="showProgress" format="boolean" />
+        <attr name="waveformHorizontalPadding" format="float" />
+        <attr name="waveformVerticalPadding" format="float" />
+        <attr name="indicatorHandleRadius" format="float" />
+        <attr name="indicatorLineWidth" format="float" />
+        <attr name="indicatorColor" format="color" />
+        <attr name="waveformColor" format="color" />
+        <attr name="waveformProgressColor" format="color" />
+        <attr name="timeBarColor" format="color" />
+    </declare-styleable>
+</resources>
