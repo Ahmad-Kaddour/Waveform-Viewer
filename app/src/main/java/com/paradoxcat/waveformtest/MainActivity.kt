@@ -13,7 +13,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.paradoxcat.waveformtest.extention.registerPlaybackPercentageCallback
-import com.paradoxcat.waveformtest.view.ProgressChangeListener
+import com.paradoxcat.waveformtest.view.waveform.ProgressChangeListener
 import com.paradoxcat.waveformtest.waveviewer.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
