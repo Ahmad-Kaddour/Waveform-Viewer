@@ -1,5 +1,6 @@
 package com.paradoxcat.waveformtest.view.waveform
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -34,7 +35,10 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
 
     // Calculating X coordinate for the progress indicator.
     private val progressX: Float
-    get() = LEFT_RIGHT_PADDING + (progress * (width - LEFT_RIGHT_PADDING * 2) / 100).toFloat()
+    get() {
+        return if (indicatorTouchX != 0f) indicatorTouchX
+        else LEFT_RIGHT_PADDING + (progress * (width - LEFT_RIGHT_PADDING * 2) / 100).toFloat()
+    }
 
     // Calculating Y coordinate for the progress indicator.
     private val progressY: Float
@@ -111,31 +115,33 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
     }
 
 
-    private var lastTouchX = 0f
+    private var indicatorTouchX = 0f
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN ->
                 // Check if the touch event is within the indicator bounds
                 if (isWithinIndicatorBounds(event.x, event.y)) {
                     // Store the initial touch position
-                    lastTouchX = event.x
+                    indicatorTouchX = event.x
                     return true
                 }
             MotionEvent.ACTION_MOVE -> {
-                // Calculate the distance moved horizontally
-                val distanceX: Float = event.x - lastTouchX
-                // Update the indicator position
-                updateIndicatorPosition(distanceX)
                 // Update the last touch position
-                lastTouchX = event.x
+                indicatorTouchX = event.x
+                // Preventing indicator from going out of the view bounds
+                indicatorTouchX = max(LEFT_RIGHT_PADDING, indicatorTouchX)
+                indicatorTouchX = min(LEFT_RIGHT_PADDING + (width - LEFT_RIGHT_PADDING * 2), indicatorTouchX)
                 // Invalidate the view to redraw the line
                 invalidate()
                 return true
             }
             MotionEvent.ACTION_UP -> {
+                // Updating the progress value
+                updateIndicatorProgress()
                 // Reset the last touch position
-                lastTouchX = 0f
+                indicatorTouchX = 0f
                 return true
             }
         }
@@ -159,15 +165,10 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
     }
 
     /**
-     * Updating the position of the progress indicator by the specified distance.
-     * @param distance -- The distance the pointer should move.
-     *                    If the distance is negative the indicator will move left otherwise it will move right.
+     * Updating the current progress value and notifying observers with the new value.
      */
-    private fun updateIndicatorPosition(distance: Float){
-        var newProgressX = progressX + distance
-        newProgressX = max(LEFT_RIGHT_PADDING, newProgressX)
-        newProgressX = min(LEFT_RIGHT_PADDING + (width - LEFT_RIGHT_PADDING * 2), newProgressX)
-        progress = ((newProgressX - LEFT_RIGHT_PADDING) / (width - LEFT_RIGHT_PADDING * 2) * 100).toDouble()
+    private fun updateIndicatorProgress(){
+        progress = ((indicatorTouchX - LEFT_RIGHT_PADDING) / (width - LEFT_RIGHT_PADDING * 2) * 100).toDouble()
         progressChangeListener?.onProgressChanged(progress)
     }
 
