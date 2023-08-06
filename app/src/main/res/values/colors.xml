@@ -7,4 +7,9 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="red">#FF3131</color>
+    <color name="gray">#A9A9A9</color>
+    <color name="waveform_color">#D3D3D3</color>
+    <color name="waveform_fill_color">#A9A9A9</color>
+    <color name="time_bar_color">#818589</color>
 </resources>

@@ -14,6 +14,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.paradoxcat.waveformtest.extention.registerPlaybackPercentageCallback
 import com.paradoxcat.waveformtest.view.waveform.ProgressChangeListener
+import com.paradoxcat.waveformtest.waveviewer.R
 import com.paradoxcat.waveformtest.waveviewer.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -77,6 +78,12 @@ class MainActivity : AppCompatActivity() {
                     }else if (playbackState == Player.STATE_READY){
                         _binding.waveformView.setDuration(exoPlayer.duration)
                     }
+                }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    super.onIsPlayingChanged(isPlaying)
+                    if (isPlaying) _binding.playButton.setImageResource(R.drawable.ic_pause)
+                    else _binding.playButton.setImageResource(R.drawable.ic_play_arrow)
                 }
             })
 

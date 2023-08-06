@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="waveform_color">#A9A9A9</color>
+    <color name="waveform_fill_color">#FFFFFF</color>
+    <color name="time_bar_color">#A9A9A9</color>
+</resources>
