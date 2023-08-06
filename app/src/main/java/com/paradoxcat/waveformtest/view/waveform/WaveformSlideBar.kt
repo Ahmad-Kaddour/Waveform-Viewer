@@ -56,54 +56,60 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
         }
     }
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (::waveForm.isInitialized) {
             if (!::waveFormBatched.isInitialized) {
                 splitWaveForm()
             }
 
-            val sampleDistance =
-                (width - LEFT_RIGHT_PADDING * 2) / (waveForm.size - 1) // distance between centers of 2 samples
-            val maxAmplitude =
-                height / 2.0f - TOP_BOTTOM_PADDING // max amount of px from middle to the edge minus pad
-            val amplitudeScaleFactor =
-                INV_MAX_VALUE * maxAmplitude // multiply by this to get number of px from middle
-
-            var prevX = 0f
-            var prevLastY = 0f
-
-            // drawing the waveform
-            waveFormBatched.forEachIndexed { i, batchData ->
-
-                    val x = LEFT_RIGHT_PADDING + i * max(1f, sampleDistance) // minimum distance between centers should be 1 pixel.
-                    val minY = height / 2.0f - batchData.minAmplitude * amplitudeScaleFactor
-                    val maxY = height / 2.0f - batchData.maxAmplitude * amplitudeScaleFactor
-                    val firstY =
-                        if (batchData.minFirstIndex < batchData.maxFirstIndex) minY
-                        else maxY
-                    val lastY =
-                        if (batchData.minLastIndex > batchData.maxLastIndex) minY
-                        else maxY
-
-                    val paint = if (x <= progressX) progressPaint else linePaint
-                    // drawing vertical line between the minimum and maximum amplitudes in the same pixels column.
-                    canvas?.drawLine(x, minY, x, maxY, paint)
-
-                    // drawing a line between the last sample in the previous column and the first sample in the current column.
-                    if (i > 0){
-                        canvas?.drawLine(prevX, prevLastY, x, firstY, paint)
-                    }
-
-                    prevX = x
-                    prevLastY = lastY
-            }
-
-            // drawing the indicator
-            canvas?.drawLine(progressX, 0f, progressX, progressY, progressIndicatorPaint)
-            canvas?.drawCircle(progressX, progressY, INDICATOR_CIRCLE_RADIOS , progressIndicatorPaint)
+            drawWaveForm(canvas)
+            drawProgressIndicator(canvas)
         }
     }
+
+    private fun drawWaveForm(canvas: Canvas){
+        val sampleDistance =
+            (width - LEFT_RIGHT_PADDING * 2) / (waveForm.size - 1) // distance between centers of 2 samples
+        val maxAmplitude =
+            height / 2.0f - TOP_BOTTOM_PADDING // max amount of px from middle to the edge minus pad
+        val amplitudeScaleFactor =
+            INV_MAX_VALUE * maxAmplitude // multiply by this to get number of px from middle
+
+        var prevX = 0f
+        var prevLastY = 0f
+
+        waveFormBatched.forEachIndexed { i, batchData ->
+
+            val x = LEFT_RIGHT_PADDING + i * max(1f, sampleDistance) // minimum distance between centers should be 1 pixel.
+            val minY = height / 2.0f - batchData.minAmplitude * amplitudeScaleFactor
+            val maxY = height / 2.0f - batchData.maxAmplitude * amplitudeScaleFactor
+            val firstY =
+                if (batchData.minFirstIndex < batchData.maxFirstIndex) minY
+                else maxY
+            val lastY =
+                if (batchData.minLastIndex > batchData.maxLastIndex) minY
+                else maxY
+
+            val paint = if (x <= progressX) progressPaint else linePaint
+            // drawing vertical line between the minimum and maximum amplitudes in the same pixels column.
+            canvas.drawLine(x, minY, x, maxY, paint)
+
+            // drawing a line between the last sample in the previous column and the first sample in the current column.
+            if (i > 0){
+                canvas.drawLine(prevX, prevLastY, x, firstY, paint)
+            }
+
+            prevX = x
+            prevLastY = lastY
+        }
+    }
+
+    private fun drawProgressIndicator(canvas: Canvas){
+        canvas.drawLine(progressX, 0f, progressX, progressY, progressIndicatorPaint)
+        canvas.drawCircle(progressX, progressY, INDICATOR_CIRCLE_RADIOS , progressIndicatorPaint)
+    }
+
 
     private var lastTouchX = 0f
 
@@ -138,7 +144,7 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
 
 
     /**
-     * Checking if the touch coordinates fall within the handle of the progress indicator.
+     * Checking if the touch coordinates fall within the bounds of the progress indicator.
      * @param touchX -- X position of the touch coordinates in pixels.
      * @param touchY -- Y position of the touch coordinates in pixels.
      */
@@ -147,7 +153,9 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
         val centerY = progressY
         val dx = (touchX - centerX).pow(2)
         val dy = (touchY - centerY).pow(2)
-        return dx + dy < INDICATOR_CIRCLE_RADIOS.pow(2)
+        val isInsideTheHandle = dx + dy < INDICATOR_CIRCLE_RADIOS.pow(2)
+        val isOnTheLine = touchX <= centerX + INDICATOR_CIRCLE_RADIOS && touchX >= centerX - INDICATOR_CIRCLE_RADIOS
+        return isInsideTheHandle || isOnTheLine
     }
 
     /**
