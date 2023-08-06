@@ -224,19 +224,45 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
         val pixelsCount = (width - LEFT_RIGHT_PADDING * 2)  // available amount of pixels in a raw
         val samplesPerPixel = waveForm.size / pixelsCount  // to determine how many samples will have the same X value.
         val batchSize = max(1, ceil(samplesPerPixel).toInt()) // to handle the case if samples are less than the pixels.
-        waveFormBatched = waveForm.toList().chunked(batchSize)
-            .map {  batch ->
-                val min = batch.min()
-                val max = batch.max()
-                WaveFormBatchData(
-                    minAmplitude = min,
-                    maxAmplitude = max,
-                    minFirstIndex = batch.indexOf(min),
-                    minLastIndex = batch.lastIndexOf(min),
-                    maxFirstIndex = batch.indexOf(max),
-                    maxLastIndex = batch.lastIndexOf(max)
-                )
+        val batches = mutableListOf<WaveFormBatchData>()
+
+        // Splitting data
+        var index = 0
+        while (index < waveForm.size){
+            var minInBatch = Int.MAX_VALUE
+            var maxInBatch = Int.MIN_VALUE
+            var minFirstIndex = -1
+            var minLastIndex = -1
+            var maxFirstIndex = -1
+            var maxLastIndex = -1
+
+            for (j in 1 .. batchSize){
+                val sample = waveForm[index]
+                if (sample <= minInBatch){
+                    if (sample != minInBatch) minFirstIndex = index
+                    minLastIndex = index
+                    minInBatch = sample
+                }
+                if (sample >= maxInBatch){
+                    maxLastIndex = index
+                    if (sample != maxInBatch) maxFirstIndex = index
+                    maxInBatch = sample
+                }
+                if (++index == waveForm.size) break
+            }
+
+            val batchData = WaveFormBatchData(
+                                minInBatch,
+                                maxInBatch,
+                                minFirstIndex,
+                                minLastIndex,
+                                maxFirstIndex,
+                                maxLastIndex
+                            )
+            batches.add(batchData)
         }
+
+        waveFormBatched = batches
     }
 
     /**
