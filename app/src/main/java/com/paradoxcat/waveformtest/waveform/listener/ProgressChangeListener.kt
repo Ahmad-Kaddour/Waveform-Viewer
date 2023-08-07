@@ -1,4 +1,4 @@
-package com.paradoxcat.waveformtest.view.waveform
+package com.paradoxcat.waveformtest.waveform.listener
 
 /**
  * A functional interface for listening to progress changes.

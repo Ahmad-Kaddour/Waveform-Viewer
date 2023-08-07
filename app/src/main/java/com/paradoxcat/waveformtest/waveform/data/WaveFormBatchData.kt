@@ -1,4 +1,4 @@
-package com.paradoxcat.waveformtest.view.waveform
+package com.paradoxcat.waveformtest.waveform.data
 
 /**
  * Data class to store precalculated values needed when drawing the waveform.

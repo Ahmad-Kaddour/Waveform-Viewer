@@ -1,4 +1,4 @@
-package com.paradoxcat.waveformtest.view.waveform
+package com.paradoxcat.waveformtest.waveform.view
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -9,8 +9,9 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import com.paradoxcat.waveformtest.waveform.data.WaveFormBatchData
+import com.paradoxcat.waveformtest.waveform.listener.ProgressChangeListener
 import com.paradoxcat.waveformtest.waveviewer.R
-import java.nio.ByteBuffer
 import kotlin.math.*
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -62,6 +63,7 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
         initDrawingParameters(attrs)
     }
 
+    // Setting up drawing attributes
     private fun initDrawingParameters(attrs: AttributeSet){
         val typedArray = context.obtainStyledAttributes(attrs, R.styleable.WaveformSlideBar)
         val indicatorLineWidth = typedArray.getFloat(R.styleable.WaveformSlideBar_indicatorLineWidth, 4f)
@@ -295,69 +297,27 @@ class WaveformSlideBar(context: Context, attrs: AttributeSet) : View(context, at
     }
 
     /**
-     * Set raw audio data and draw it.
-     * @param buffer -- raw audio buffer must be 16-bit samples packed together (mono, 16-bit PCM). Sample rate does
-     *                  not matter, since we are not rendering any time-related information yet.
+     * Set audio data and draw it.
+     * @param waveForm -- the amplitudes of the waveform samples.
      */
-    fun setData(buffer: ByteBuffer) {
-        waveForm = transformRawData(buffer)
-        timeFrames = emptyList()
+    fun setData(waveForm: IntArray) {
+        this.waveForm = waveForm
+        progress = 0.0
         splitWaveForm()
         invalidate()
     }
 
     /**
-     * Set the duration of the audio, to draw the time frames bar.
-     * @param duration -- The duration of the audio in milliseconds..
+     * Set the time frames of the audio, to draw the time frames bar.
+     * @param timeFrames -- The time frames of the audio in milliseconds..
      */
-    fun setDuration(duration: Long){
-        timeFrames = convertDurationToTimeFrames(duration, 5)
+    fun setTimeFrames(timeFrames: List<Long>){
+        this.timeFrames = timeFrames
         invalidate()
     }
 
     companion object {
         private val MAX_VALUE = 2.0f.pow(16.0f) - 1 // max 16-bit value
         val INV_MAX_VALUE = 1.0f / MAX_VALUE // multiply with this to get % of max value
-
-        /** Transform raw audio into drawable array of integers */
-        fun transformRawData(buffer: ByteBuffer): IntArray {
-            val nSamples = buffer.limit() / 2 // assuming 16-bit PCM mono
-            val waveForm = IntArray(nSamples)
-            for (i in 1 until buffer.limit() step 2) {
-                waveForm[i / 2] = (buffer[i].toInt() shl 8) or buffer[i - 1].toInt()
-            }
-            return waveForm
-        }
-
-        /** Converting the duration of the audio into time frames, with minimum interval of 1 second.
-         * @param duration -- Duration of the audio in milliseconds.
-         * @param count -- The count of the time frames to be split into.
-         *                 If the duration is not enough to create time windows of the specified count,
-         *                 the returned list will contain less elements than count.
-         * @return List contains the time frames in milliseconds.
-         * @throws IllegalArgumentException if the duration is negative, or the count is less than 2.
-         **/
-        fun convertDurationToTimeFrames(duration: Long, count: Int): List<Long> {
-            if (duration < 0) {
-                throw IllegalArgumentException("duration must be positive")
-            }
-            if (count < 1) {
-                throw IllegalArgumentException("count must be at least 2")
-            }
-            val frames = mutableListOf<Long>()
-            val step = duration / (count - 1).toDouble()
-            var currentTime = step
-
-            frames.add(0)
-            while (currentTime < duration && step >= 1000){
-                frames.add(floor(currentTime).toLong())
-                currentTime += step
-            }
-            if (duration >= 1000) {
-                frames.add(duration)
-            }
-
-            return frames
-        }
     }
 }

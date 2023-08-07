@@ -1,74 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.paradoxcat.waveformtest.view.waveform.WaveformSlideBar
+    <com.paradoxcat.waveformtest.waveform.view.WaveformSlideBar
         android:id="@+id/waveformView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="50dp"
-        app:showProgress="true"
-        app:layout_constraintVertical_bias="0"
-        app:layout_constraintHeight_percent=".5"
-        app:waveformColor="@color/waveform_color"
-        app:waveformProgressColor="@color/waveform_fill_color"
         app:indicatorColor="@color/red"
-        app:timeBarColor="@color/time_bar_color"
+        app:layout_constraintBottom_toTopOf="@id/controlsContainer"
+        app:layout_constraintHeight_percent=".5"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/controlsContainer"/>
+        app:layout_constraintVertical_bias="0"
+        app:showProgress="true"
+        app:timeBarColor="@color/time_bar_color"
+        app:waveformColor="@color/waveform_color"
+        app:waveformProgressColor="@color/waveform_fill_color" />
 
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:id="@+id/controlsContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingVertical="40dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/playButton"
+        <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="40dp"
-            app:fabCustomSize="64dp"
-            app:maxImageSize="32dp"
-            app:tint="@color/white"
-            android:src="@drawable/ic_play_arrow"
-            android:backgroundTint="@color/red"
-            app:borderWidth="0dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:layout_weight="1"
+            android:gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/pickAudioButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:tint="@color/white"
-            app:fabCustomSize="45dp"
-            android:src="@drawable/ic_list"
-            android:backgroundTint="@color/gray"
-            app:borderWidth="0dp"
-            app:layout_constraintTop_toTopOf="@id/playButton"
-            app:layout_constraintBottom_toBottomOf="@id/playButton"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/playButton"/>
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/infoButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/gray"
+                android:src="@drawable/ic_info"
+                app:borderWidth="0dp"
+                app:fabCustomSize="45dp"
+                app:tint="@color/white" />
+        </RelativeLayout>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/infoButton"
+        <RelativeLayout
+            android:id="@+id/playLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:tint="@color/white"
-            app:fabCustomSize="45dp"
-            android:src="@drawable/ic_info"
-            android:backgroundTint="@color/gray"
-            app:borderWidth="0dp"
-            app:layout_constraintTop_toTopOf="@id/playButton"
-            app:layout_constraintBottom_toBottomOf="@id/playButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/playButton"/>
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:layout_weight="1"
+            android:gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/playButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/red"
+                android:src="@drawable/ic_play_arrow"
+                app:borderWidth="0dp"
+                app:fabCustomSize="64dp"
+                app:maxImageSize="32dp"
+                app:tint="@color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/pickAudioButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/gray"
+                android:src="@drawable/ic_list"
+                app:borderWidth="0dp"
+                app:fabCustomSize="45dp"
+                app:tint="@color/white" />
+        </RelativeLayout>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
