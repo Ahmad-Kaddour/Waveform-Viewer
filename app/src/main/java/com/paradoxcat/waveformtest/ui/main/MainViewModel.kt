@@ -2,6 +2,7 @@ package com.paradoxcat.waveformtest.ui.main
 
 import android.app.Application
 import android.net.Uri
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -30,13 +31,14 @@ class MainViewModel @Inject constructor(
     val timeFramesData: LiveData<List<Long>> = _timeFramesData
 
     fun extractDataFromUri(uri: Uri) {
-        uriLiveData.value = uri
         viewModelScope.launch {
             try {
                 val rawData = waveFormDataExtractor.extractData(uri)
                 val samples = rawDataConverter.transformRawData(rawData)
                 _waveFormData.value = samples
+                uriLiveData.value = uri
             } catch (e: Exception) {
+                Toast.makeText(getApplication(), e.message, Toast.LENGTH_SHORT).show()
                 e.printStackTrace()
                 if (e is CancellationException) throw CancellationException()
             }
