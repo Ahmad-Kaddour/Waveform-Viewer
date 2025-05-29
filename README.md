@@ -1,4 +1,9 @@
-# Challenge Improvements
+# Waveform Viewer
+An app that visualizes the waveform of a loaded audio file and provides interactive navigation within it. This project is an implementation of the ParadoxCat Android challenge.
+
+It is optimized to efficiently handle high-density audio data, such as gravitational wave sound files, which often contain massive amounts of data per second (e.g., 44.1kHz, 16-bit WAV files). Without proper optimizations, visualizing such data in real time would be impractical.
+
+## Challenge Improvements
 
 Since this challenge is open-ended and there are many areas for improvement, I decided to focus on optimizing the waveform rendering, as I believe it is the most important aspect of the application. After all, what's the point of having a visually appealing UI and well-structured code if the main functionality doesn't work properly?
 
