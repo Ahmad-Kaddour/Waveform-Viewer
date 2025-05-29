@@ -11,7 +11,7 @@ However, I also understand that a bad UI/UX and messy code are not desirable eit
 
 Here are the main areas that I focused on during this challenge:
 
-## Optimizing Waveform Rendering
+### Optimizing Waveform Rendering
 
 The waveform rendering proved to be the most challenging part for me. I tried several solutions before settling on the current one. For example, I experimented with different approaches to downsample the data, setting a fixed distance between samples, and adding the ability to horizontally scroll the waveform. I even tried drawing the lines asynchronously in a sequential manner.
 
@@ -21,12 +21,12 @@ For example, on a Full HD display with dimensions of 920x1080 pixels, if we have
 
 To address this issue, I modified the rendering logic. Instead of drawing a line between each pair of adjacent samples, I now draw a single line between the minimum and maximum amplitudes of the samples belonging to the same column of pixels. Additionally, I draw a line between the last value of the current column and the first value of the next column to ensure the lines appear connected on the screen. By implementing this optimization, I was able to skip thousands of unnecessary operations per pixel.
 
-### Time Complexity:
+#### Time Complexity:
 
 The time complexity of the old solution, which involved drawing a line between each pair of adjacent samples, was O(n + p), where n is the number of samples and p is the number of pixels on the screen.
 However, with the new solution, the worst-case scenario involves drawing a vertical line between the very top and the very bottom pixels for each horizontal pixel on the screen. This is equivalent to covering the entire screen, resulting in a time complexity of O(p), where p is the number of pixels on the screen. This means that the time complexity of my solution no longer depends on the number of samples.
 
-## UI/UX Improvements
+### UI/UX Improvements
 
 In addition to optimizing the waveform rendering, I also made several UI/UX improvements to enhance the overall user experience. Here are some of the features I added:
 
@@ -37,10 +37,10 @@ In addition to optimizing the waveform rendering, I also made several UI/UX impr
 5. Displaying audio file information: Users can view relevant information about the audio file, such as its length and name.
 6. UI improvements: I made various enhancements to the UI to improve its overall look and feel.
 
-## Code Structure Improvements
+### Code Structure Improvements
 
 To make the code more maintainable and testable, I performed some code refactoring and decoupled functionality into separate classes. This helps to improve the overall readability and testability of the codebase. While I had plans to further improve the code structure and architecture, time constraints prevented me from fully implementing these changes.
 
-## Unit Testing
+### Unit Testing
 
 Although I didn't have enough time to conduct comprehensive testing, I did manage to create a few tests to demonstrate the ease of testing the application.
