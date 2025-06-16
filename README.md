@@ -44,3 +44,7 @@ To make the code more maintainable and testable, I performed some code refactori
 ### Unit Testing
 
 Although I didn't have enough time to conduct comprehensive testing, I did manage to create a few tests to demonstrate the ease of testing the application.
+
+## 📱 App Screenshots
+
+<img src="screenshots/Screenshot_2025-06-02-02-25-35-884_com.pdx.ym.waveviewer.jpg" alt="Screenshot 1" width="250"/> <img src="screenshots/Screenshot_2025-06-02-02-25-44-479_com.pdx.ym.waveviewer.jpg" alt="Screenshot 2" width="250"/> <img src="screenshots/Screenshot_2025-06-02-02-25-59-342_com.pdx.ym.waveviewer.jpg" alt="Screenshot 3" width="250"/> <img src="screenshots/Screenshot_2025-06-02-02-26-42-263_com.pdx.ym.waveviewer.jpg" alt="Screenshot 4" width="250"/> <img src="screenshots/Screenshot_2025-06-02-02-26-47-508_com.pdx.ym.waveviewer.jpg" alt="Screenshot 5" width="250"/>
